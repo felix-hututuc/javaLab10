@@ -4,19 +4,19 @@ import java.net.Socket;
 public class ClientThread extends Thread{
     private Socket socket = null;
     private User client = null;
+    private boolean running = true;
 
     public ClientThread(Socket socket) {
         this.socket = socket;
     }
 
     public void run() {
-        while (true) {
-            try (BufferedReader input = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream()));
+        try {
+            while (running) {
+                BufferedReader input = new BufferedReader(
+                        new InputStreamReader(socket.getInputStream()));
 
-                 BufferedWriter output = new BufferedWriter(
-                         new OutputStreamWriter(socket.getOutputStream()))
-            ) {
+                PrintWriter output = new PrintWriter(socket.getOutputStream());
 
                 String request = input.readLine();
                 String answer = null;
@@ -25,30 +25,43 @@ public class ClientThread extends Thread{
                 }
 
                 if (answer != null) {
-                    output.write(answer);
+                    output.println(answer);
+                    output.flush();
+                    if (answer.equals("Server stopped")) {
+                        System.out.println("Exiting server...");
+                        System.exit(0);
+                    }
                 }
 
+
+            }
+        } catch (IOException e) {
+            System.err.println("Communication error...\n" + e);
+        } finally {
+            try {
+                socket.close();
             } catch (IOException e) {
-                System.err.println("Communication error...\n" + e);
+                e.printStackTrace();
             }
         }
     }
 
     private String handleRequest (String request) {
         if (request.startsWith("register ")) {
-            return "Server received the request ... \n";
+            return "Server received the request ...";
         } else if (request.startsWith("login ")) {
-            return "Server received the request ... \n";
+            return "Server received the request ...";
         } else if (request.startsWith("friend ")) {
-            return "Server received the request ... \n";
+            return "Server received the request ...";
         } else if (request.startsWith("send ")) {
-            return "Server received the request ... \n";
+            return "Server received the request ...";
         } else if (request.equals("read")) {
-            return "Server received the request ... \n";
+            return "Server received the request ...";
         } else if (request.equals("stop")) {
-            return "Server stopped\n";
+            running = false;
+            return "Server stopped";
         } else {
-            return "Unknown command\n";
+            return "Unknown command";
         }
     }
 }

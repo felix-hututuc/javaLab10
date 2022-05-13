@@ -5,13 +5,12 @@ import java.util.Scanner;
 public class Client {
     public static void main(String[] args) throws IOException {
         String serverIP = "127.0.0.1";
-        int PORT = 8100;
+        int PORT = 8765;
 
         Socket socket = new Socket(serverIP, PORT);
 
-        BufferedWriter output = new BufferedWriter(
-                new OutputStreamWriter(socket.getOutputStream())
-        );
+        PrintWriter output = new PrintWriter(
+                socket.getOutputStream(), true);
 
         BufferedReader input = new BufferedReader(
                 new InputStreamReader(socket.getInputStream())
@@ -23,11 +22,16 @@ public class Client {
             String request = cin.nextLine();
             if (request.equals("exit")) {
                 System.out.println("Closing the client...\n");
+                output.println("stop");
                 break;
             }
-            output.write(request);
+            output.println(request);
             String answer = input.readLine();
             System.out.println(answer);
+            if (request.equals("stop")) {
+                System.out.println("Closing the client...\n");
+                break;
+            }
         }
     }
 }
