@@ -4,7 +4,7 @@ import java.net.Socket;
 public class ClientThread extends Thread{
     private Socket socket = null;
     private User client = null;
-    private boolean running = true;
+    private ThreadLocal<Boolean> running = new ThreadLocal<>();
 
     public ClientThread(Socket socket) {
         this.socket = socket;
@@ -12,7 +12,8 @@ public class ClientThread extends Thread{
 
     public void run() {
         try {
-            while (running) {
+            running.set(true);
+            while (running.get()) {
                 BufferedReader input = new BufferedReader(
                         new InputStreamReader(socket.getInputStream()));
 
@@ -30,6 +31,9 @@ public class ClientThread extends Thread{
                     if (answer.equals("Server stopped")) {
                         System.out.println("Exiting server...");
                         System.exit(0);
+                    } else if (answer.equals("Bye bye...")) {
+                        System.out.println("Client left...");
+                        break;
                     }
                 }
 
@@ -58,8 +62,11 @@ public class ClientThread extends Thread{
         } else if (request.equals("read")) {
             return "Server received the request ...";
         } else if (request.equals("stop")) {
-            running = false;
+            running.set(false);
             return "Server stopped";
+        } else if (request.equals("exit")) {
+            running.set(false);
+            return "Bye bye...";
         } else {
             return "Unknown command";
         }

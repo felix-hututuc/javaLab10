@@ -20,15 +20,10 @@ public class Client {
 
         while (true) {
             String request = cin.nextLine();
-            if (request.equals("exit")) {
-                System.out.println("Closing the client...\n");
-                output.println("stop");
-                break;
-            }
             output.println(request);
             String answer = input.readLine();
             System.out.println(answer);
-            if (request.equals("stop")) {
+            if (request.equals("stop") || request.equals("exit")) {
                 System.out.println("Closing the client...\n");
                 break;
             }
