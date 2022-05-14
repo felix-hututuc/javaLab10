@@ -1,21 +1,32 @@
-import java.util.ArrayList;
+import java.io.File;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class User {
-    private String username;
-    private List<User> friendList = new ArrayList<>();
-    private String messageFile;
+    private final String username;
+    private final Set<String> friendList = new HashSet<>();
+    private final File messageFile;
 
     public User(String username) {
         this.username = username;
-        messageFile = "./msg" + username + ".txt";
+         String messagePath = "E:\\Facultate\\Informatica_2020\\Semestrul_4\\Java\\javaLab10\\Server\\messageFiles\\msg" + username + ".txt";
+         messageFile = new File(messagePath);
     }
 
-    public void addFriend(User friend) {
+    public void addFriend(String friend) {
         friendList.add(friend);
     }
 
-//    public String getMessages() {
-//
-//    }
+    public File getMessageFile() {
+        return messageFile;
+    }
+
+    public Set<String> getFriendList() {
+        return friendList;
+    }
+
+    public String getUsername() {
+        return username;
+    }
 }

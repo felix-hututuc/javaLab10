@@ -1,24 +1,43 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Server {
 
     public static final int PORT = 8765;
+//    private final Set<User> users = Collections.synchronizedSet(new HashSet<>());
+    private boolean open = true;
 
-    public Server() throws IOException {
+
+    public Server() {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            while (true) {
+            while (open) {
                 System.out.println("Waiting for a client...");
                 Socket socket = serverSocket.accept();
-                new ClientThread(socket).start();
+                socket.setSoTimeout(60 * 1000);
+                new ClientThread(socket, this).start();
             }
         } catch (IOException e) {
             System.err.println("Error: " + e);
         }
     }
 
-    public static void main(String[] args) throws IOException {
+//    public void addUser(User newUser) {
+//        users.add(newUser);
+//    }
+//
+//    public boolean userExists(User user) {
+//        return users.contains(user);
+//    }
+
+    public void closeServer() {
+        open = false;
+    }
+
+    public static void main(String[] args) {
         Server myServer = new Server();
     }
 }

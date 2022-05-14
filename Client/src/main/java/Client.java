@@ -22,6 +22,9 @@ public class Client {
             String request = cin.nextLine();
             output.println(request);
             String answer = input.readLine();
+            if (request.equals("read")) {
+                answer = answer.replace("--newline--", "\n");
+            }
             System.out.println(answer);
             if (request.equals("stop") || request.equals("exit")) {
                 System.out.println("Closing the client...\n");
