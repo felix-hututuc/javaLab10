@@ -8,7 +8,7 @@ import java.util.Set;
 public class Server {
 
     public static final int PORT = 8765;
-//    private final Set<User> users = Collections.synchronizedSet(new HashSet<>());
+    private final Set<User> users = Collections.synchronizedSet(new HashSet<>());
     private boolean open = true;
 
 
@@ -25,16 +25,26 @@ public class Server {
         }
     }
 
-//    public void addUser(User newUser) {
-//        users.add(newUser);
-//    }
-//
-//    public boolean userExists(User user) {
-//        return users.contains(user);
-//    }
+    public void addUser(User newUser) {
+        users.add(newUser);
+    }
+
+    public boolean userExists(User user) {
+        return users.contains(user);
+    }
 
     public void closeServer() {
         open = false;
+    }
+
+    public User getUserByName(String username) {
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                return user;
+            }
+        }
+
+        return null;
     }
 
     public static void main(String[] args) {

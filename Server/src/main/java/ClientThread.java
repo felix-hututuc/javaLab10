@@ -1,6 +1,6 @@
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.Path;
+import java.net.SocketTimeoutException;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -19,14 +19,14 @@ public class ClientThread extends Thread{
     }
 
     public void run() {
-        try {
+        try (BufferedReader input = new BufferedReader(
+                new InputStreamReader(socket.getInputStream()));
+
+             PrintWriter output = new PrintWriter(socket.getOutputStream())) {
             running.set(true);
             loggedIn.set(false);
             while (running.get()) {
-                BufferedReader input = new BufferedReader(
-                        new InputStreamReader(socket.getInputStream()));
 
-                PrintWriter output = new PrintWriter(socket.getOutputStream());
 
                 String request = input.readLine();
                 String answer = null;
@@ -40,15 +40,16 @@ public class ClientThread extends Thread{
                     output.flush();
                     if (answer.equals("Server stopped")) {
                         System.out.println("Exiting server...");
-                        System.exit(0);
+                        //System.exit(0);
+                        break;
                     } else if (answer.equals("Bye bye...")) {
                         System.out.println("Client left...");
                         break;
                     }
                 }
-
-
             }
+        } catch (SocketTimeoutException e) {
+            System.err.println("Connection timed out ... ");
         } catch (IOException e) {
             System.err.println("Communication error...\n" + e);
         } finally {
@@ -61,23 +62,42 @@ public class ClientThread extends Thread{
     }
 
     private String handleRequest (String request) {
-        if (request.startsWith("register ")) {
+        if (request.startsWith("register ")) {              //REGISTER
+            if (loggedIn.get()) {
+                return "Already logged in ...";
+            }
+
             String username = request.substring(9);
             if (username.isEmpty() || StringUtils.containsAny(username, " ,/")) {
                 return "Invalid username!";
             }
-            loggedIn.set(true);
+
+            //loggedIn.set(true);
+            if (server.userExists(new User(username))) {
+                return "Username already exists!";
+            }
+
             client = new User(username);
-            return "Created account and logged in ...";
-        } else if (request.startsWith("login ")) {
+            server.addUser(client);
+
+            return "Created account...";
+        } else if (request.startsWith("login ")) {          //LOGIN
+            if (loggedIn.get()) {
+                return "Already logged in ...";
+            }
+
             String username = request.substring(6);
             if (username.isEmpty() || StringUtils.containsAny(username, " ,/")) {
                 return "Invalid username!";
             }
+            if (!server.userExists(new User(username))) {
+                return "User not registered!";
+            }
+
             loggedIn.set(true);
             client = new User(username);
             return "Logged in ...";
-        } else if (request.startsWith("friend ")) {
+        } else if (request.startsWith("friend ")) {         //FRIEND
             if (!loggedIn.get()) {
                 return "Not logged in ...";
             }
@@ -85,10 +105,16 @@ public class ClientThread extends Thread{
 
             StringTokenizer st = new StringTokenizer(newFriends, " ");
             while (st.hasMoreTokens()) {
-                client.addFriend(st.nextToken());
+                String friendUsername = st.nextToken();
+                User newFriend = server.getUserByName(friendUsername);
+                if (newFriend == null) {
+                    return "User " + friendUsername + " does not exist.";
+                }
+                client.addFriend(newFriend);
+//                newFriend.addFriend(client);
             }
             return "Added friends ...";
-        } else if (request.startsWith("send ")) {
+        } else if (request.startsWith("send ")) {           //SEND
             if (!loggedIn.get()) {
                 return "Not logged in ...";
             }
@@ -96,13 +122,12 @@ public class ClientThread extends Thread{
             if (message.isEmpty()) {
                 return "Empty message ...";
             }
-            Set<String> friendList = client.getFriendList();
-            for (String friend : friendList) {
-                String path = "E:\\Facultate\\Informatica_2020\\Semestrul_4\\Java\\javaLab10\\Server\\messageFiles\\msg" + friend + ".txt";
-                sendMessage(client.getUsername(), path, message);
+            Set<User> friendList = client.getFriendList();
+            for (User friend : friendList) {
+                sendMessage(client.getUsername(), friend.getMessageFile(), message);
             }
             return "Message sent ...";
-        } else if (request.equals("read")) {
+        } else if (request.equals("read")) {                //READ
             if (!loggedIn.get()) {
                 return "Not logged in ...";
             }
@@ -111,10 +136,10 @@ public class ClientThread extends Thread{
                 messages = messages.replace("\n", "--newline--");
             }
             return messages;
-        } else if (request.equals("stop")) {
+        } else if (request.equals("stop")) {                //STOP
             running.set(false);
             return "Server stopped";
-        } else if (request.equals("exit")) {
+        } else if (request.equals("exit")) {                //EXIT
             running.set(false);
             server.closeServer();
             return "Bye bye...";
@@ -123,10 +148,9 @@ public class ClientThread extends Thread{
         }
     }
 
-    private synchronized void sendMessage (String senderName, String path, String message) {
-        Path filePath = Path.of(path);
+    private synchronized void sendMessage (String senderName, File filePath, String message) {
         try (BufferedWriter writer = new BufferedWriter(
-                new FileWriter(filePath.toFile(), true))) {
+                new FileWriter(filePath, true))) {
             writer.write(senderName + ": " + message + "\n");
         } catch (IOException e) {
             e.printStackTrace();
